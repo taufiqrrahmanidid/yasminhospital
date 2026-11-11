@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         String   @default("User") // "Master", "SuperUser", "User"
+  permissions  Json?    @default("[]")
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model AdminDeviceLicense {
+  id          String   @id @default(uuid())
+  deviceHash  String   @unique
+  deviceName  String
+  adminEmail  String
+  isAllowed   Boolean  @default(false)
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  lastActive  DateTime @updatedAt
+}
+
+model RegistrationInvite {
+  id            String   @id @default(uuid())
+  token         String   @unique
+  patientName   String
+  phone         String
+  passcodeHash  String
+  expiresAt     DateTime
+  isUsed        Boolean  @default(false)
+  adminEmail    String
+  createdAt     DateTime @default(now())
+}
+
+model Pendaftaran {
+  id                     String   @id
+  source                 String   @default("link_webapp")
+  status                 String   @default("baru")
+  patientName            String
+  phone                  String
+  patientType            String   @default("Umum")
+  patientStatus          String   @default("Baru")
+  noIdentitas            String?
+  selectedPoli           String?  @default("Poli Spesialis / Umum")
+  selectedDoctorId       String   @default("LDP")
+  selectedDoctorName     String?  @default("dr. Luty Diah Prahmani, Sp.A")
+  selectedDate           String
+  selectedTimeSlot       String
+  metodePembayaran       String   @default("transfer")
+  bankTujuan             String?
+  nominalBiaya           Int      @default(0)
+  buktiTransferImage     String?  @db.Text
+  buktiTransferDikirim   Boolean  @default(false)
+  kodeBooking            String?
+  antrian                String?
+  simrsPending           Boolean  @default(false)
+  adminNotes             String?  @db.Text
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model HospitalInfo {
+  id               String   @id @default("hospital_info")
+  name             String
+  address          String
+  phone            String
+  email            String
+  whatsapp         String
+  accreditation    String
+  logo             String?  @db.Text
+  youtubeChannelId String?
+  updatedAt        DateTime @updatedAt
+}
+
+model Polyclinic {
+  code              String   @id
+  name              String
+  status            String
+  price             Int      @default(135000)
+  activeSinceDate   String?
+  inactiveSinceDate String?
+}
+
+model Specialist {
+  code        String @id
+  name        String
+  description String @db.Text
+}
+
+model Doctor {
+  id                String  @id
+  name              String
+  specialty         String
+  subSpecialty      String?
+  gender            String?
+  speciali          String?
+  experience        Int     @default(0)
+  rating            Float   @default(5.0)
+  bpjs              Boolean @default(true)
+  education         String?
+  bio               String? @db.Text
+  image             String? @db.Text
+  status            String  @default("Aktif")
+  gradGradDate      String?
+  licenseNumber     String?
+  specGradDate      String?
+  specLicenseNumber String?
+  joinDate          String?
+  leaveFromDate     String?
+  leaveToDate       String?
+  schedule          Json?
+}
+
+model Room {
+  id         String @id
+  type       String
+  name       String
+  class      String
+  capacity   Int    @default(0)
+  occupied   Int    @default(0)
+  facilities String @db.Text
+}
+
+model SocialMedia {
+  id       String @id
+  platform String
+  url      String
+  icon     String
+}
+
+model SocialFeed {
+  id        String   @id @default(uuid())
+  platform  String
+  title     String
+  desc      String?  @db.Text
+  url       String
+  embedUrl  String?
+  thumbnail String?  @db.Text
+  tag       String   @default("Edukasi")
+  dateStr   String
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id         String  @id
+  title      String
+  image      String? @db.Text
+  isActive   Boolean @default(true)
+  activeDate String?
+  closeDate  String?
+}
+
+model GoogleReview {
+  id           String   @id
+  authorName   String
+  authorPhoto  String?  @db.Text
+  rating       Int
+  dateStr      String
+  relativeTime String
+  comment      String   @db.Text
+  isVisible    Boolean  @default(true)
+  source       String   @default("google_maps")
+  publishTime  DateTime
+  syncedAt     DateTime @default(now())
+}
+
+model Article {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.Text
+  coverImage  String?  @db.Text
+  category    String   @default("Kesehatan")
+  author      String   @default("Tim Medis RS Yasmin")
+  tags        String?
+  views       Int      @default(0)
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QueueLog {
+  id            String   @id @default(uuid())
+  pendaftaranId String
+  polyclinic    String
+  queueNumber   String
+  status        String   @default("waiting")
+  calledAt      DateTime?
+  completedAt   DateTime?
+  calledBy      String?
+  loketNumber   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PatientFeedback {
+  id          String   @id @default(uuid())
+  patientId   String
+  kesan       String
+  messages    Json     // Menyimpan array pesan (Saran/Keluhan per unit)
+  attachments Json     // Menyimpan array lampiran (Base64/Nama file)
+  status      String   @default("unread") // unread, read, resolved
+  createdAt   DateTime @default(now())
+}
+
+model SystemSetting {
+  key         String   @id
+  value       String   @db.Text  // Nilai terenkripsi (format: iv:authTag:ciphertext)
+  isSecret    Boolean  @default(false) // Jika true, tampilkan sebagai "****" di UI
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemSettingLog {
+  id         String   @id @default(uuid())
+  settingKey String
+  action     String   // "CREATE", "UPDATE", "DELETE"
+  oldValue   String?  @db.Text // Masked version
+  newValue   String?  @db.Text // Masked version
+  changedBy  String   // Email admin
+  createdAt  DateTime @default(now())
+}
+
+model InsurancePartner {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // Isinya: "Asuransi" atau "Perusahaan"
+  createdAt DateTime @default(now())
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  bankName      String
+  accountNumber String
+  accountHolder String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model KpiRecord {
+  id         String   @id @default(uuid())
+  kpiCode    String   // Contoh: "KPI_IGD", "KPI_ICU"
+  metricKey  String   // Contoh: "total_pasien", "response_time"
+  value      String   // Disimpan sebagai string agar fleksibel (bisa "12", "4.8", "15 Menit")
+  periodDate DateTime // Tanggal data ini berlaku
+  source     String   @default("manual") // "manual", "simrs_api", "local_db"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([kpiCode, metricKey, periodDate])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  userEmail String
+  action    String   // Contoh: "LOGIN", "CREATE_USER", "UPDATE_KPI", "DELETE_POLI"
+  entity    String   // Contoh: "AdminUser", "KpiRecord", "Polyclinic"
+  entityId  String?  // ID dari data yang diubah (jika ada)
+  details   String?  @db.Text // Detail perubahan (misal: JSON perubahan data)
+  ipAddress String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+}
+
+model SpecialistCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
